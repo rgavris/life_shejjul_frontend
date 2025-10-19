@@ -17,6 +17,8 @@
   "author": "us",
   "license": "ISC",
   "dependencies": {
+    "@types/express": "^5.0.3",
+    "express": "^5.1.0",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.1.13",
     "typeorm": "^0.3.27"
