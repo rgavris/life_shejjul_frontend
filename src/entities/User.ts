@@ -18,8 +18,14 @@ export class User {
   @Column()
   lastName!: string;
 
-  @Column()
+  @Column({ nullable: true })
   age!: number;
+
+  @Column({ unique: true })
+  username!: string;
+
+  @Column()
+  password!: string;
 
   @Column({ nullable: true })
   eventId!: number | null;

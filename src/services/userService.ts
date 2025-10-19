@@ -16,14 +16,21 @@ export class UserService {
 
   async findAll(): Promise<User[]> {
     return await this.userRepository.find({
-      relations: ["event"]
+      relations: ["event"],
     });
   }
 
   async findById(id: number): Promise<User | null> {
     return await this.userRepository.findOne({
       where: { id },
-      relations: ["event"]
+      relations: ["event"],
+    });
+  }
+
+  async findByUsername(username: string): Promise<User | null> {
+    return await this.userRepository.findOne({
+      where: { username },
+      relations: ["event"],
     });
   }
 
@@ -37,10 +44,11 @@ export class UserService {
     return result.affected !== 0;
   }
 
+  // TODO figure out what happens if age is null
   async findByAge(age: number): Promise<User[]> {
     return await this.userRepository.find({
       where: { age },
-      relations: ["event"]
+      relations: ["event"],
     });
   }
 
@@ -49,10 +57,10 @@ export class UserService {
     if (lastName) {
       whereCondition.lastName = lastName;
     }
-    
+
     return await this.userRepository.find({
       where: whereCondition,
-      relations: ["event"]
+      relations: ["event"],
     });
   }
 }

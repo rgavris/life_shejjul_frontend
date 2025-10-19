@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import { DataSource } from "typeorm";
 import express from "express";
+import bcrypt from "bcrypt";
 import { User } from "./entities/User";
 import { Event } from "./entities/Event";
 import { Contact } from "./entities/Contact";
@@ -27,6 +28,52 @@ async function main() {
 
     const userService = new UserService();
     const contactService = new ContactService();
+
+    app.post("/login", async (req, res) => {
+      const { username, password } = req.body;
+      try {
+        const user = await userService.findByUsername(username);
+        if (!user) {
+          res.status(401).json({ error: "Username not found" });
+        } else if (await bcrypt.compare(password, user.password)) {
+          res.json({ message: "Login successful", user });
+        } else {
+          res.status(401).json({ error: "Invalid password" });
+        }
+      } catch (error) {
+        res.status(500).json({ error: "Login failed" });
+      }
+    });
+
+    app.post("/users", async (req, res) => {
+      try {
+        const { firstName, lastName, username, password } = req.body;
+
+        if (!firstName || !lastName || !username || !password) {
+          return res.status(400).json({
+            error:
+              "Missing required fields: firstName, lastName, username, password",
+          });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const newUser = await userService.create({
+          firstName,
+          lastName,
+          username,
+          password: hashedPassword,
+        });
+
+        res.status(201).json(newUser);
+      } catch (error: any) {
+        if (error.code === "23505") {
+          res.status(409).json({ error: "Username already exists" });
+        } else {
+          res.status(500).json({ error: "Failed to create user" });
+        }
+      }
+    });
 
     app.get("/users", async (req, res) => {
       try {
