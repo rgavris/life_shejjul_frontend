@@ -1,30 +1,55 @@
 ## ToDo
 
-1. Got postgres running
-2. Chose an ORM (typeORM)
-3. Made our first table aka TypeOrm Entity
-4. Made Claude refactor into a TypeScript project so that TypeORM would work
-5. Make db CRUD functions:
- -- createUser, getUser, updateUser, deleteUser
- -- createEvent, getEvent, updateEvent, deleteEvent
- -- createContact, getContact, updateContact, deleteContact
- --- validation goes here
- 
-6. API:
--- getAllMyEvents()
--- Contact contacts: send event invitations
--- Reminders: email, text
+- [x] Got postgres running
+- [x] Chose an ORM (typeORM)
+- [x] Made our first table aka TypeOrm Entity
+- [x] Made Claude refactor into a TypeScript project so that TypeORM would work
 
-6a: Convenience
-- add package.json command to start postgres in background if not started
+### CRUD Functions
+- [x] ~~createUser, getUser, updateUser, deleteUser~~
+- [x] ~~createEvent, getEvent, updateEvent, deleteEvent~~
+- [x] ~~createContact, getContact, updateContact, deleteContact~~
+- [ ] Validation
+  - [ ] Don't allow saving invalid contact info
+  - [ ] Notify user if invalid
+  - [ ] Handle on backend (in CRUD or API)
+  - [ ] Can also handle on frontend
 
-7. UI / UX
--- React
--- CSS
+### API Routes
+- [x] GET /users
+- [x] POST /users (create user)
+- [x] GET /contacts
+- [x] POST /login
+- [ ] getAllMyEvents()
+- [ ] Add remaining API routes/endpoints for db CRUD
+- [ ] getAllContactsWithUpcomingBirthdays()
+- [ ] getAllContactsAttendingUpcomingEvents()
 
-8. Transition to migrations
--- Add, e.g. yarn typeorm migration:generate -d src/data-source.ts -n CreateUserTable
--- yarn migrate CreateUserTable
+### Contact Features
+- [ ] Send event invitations
+- [ ] saveEventInvitationText()
+- [ ] sendEventInvitationsToContactList(Contact[])
+- [ ] Reminders: email, text
+
+### User Profile
+- [x] ~~DB entity: Update user to include username and password~~
+- [x] ~~CRUD or API endpoint to login and store/retrieve password~~
+- [x] ~~Crypto (bcrypt password hashing)~~
+- [ ] Reset Password
+- [ ] Frontend: User Profile
+
+### UI / UX
+- [ ] React
+- [ ] CSS
+
+### Migrations
+- [ ] Transition to migrations
+- [ ] Add migration generation command
+- [ ] Add migration run command
+
+### Convenience
+- [ ] Add package.json command to start postgres in background if not started
+
 
 ## Tables
 Events
@@ -62,3 +87,14 @@ me: {
 },
 spouse: 
 }
+
+## Notes
+"callback hell" -> .then/.catch -> async/await
+RESTful API: endpoint, state/data, status codes (200, 404, 401, 500)
+
+Steps: Make the DB, Define schema aka make entities, Write services to do CRUD operations
+// Frontend (React/CSS)
+// API: server to talk to outside world, logic to handle requests
+// CRUD: mechanics of accessing the database
+// DevOps: deploy the app, set up CI/CD pipelines, monitoring, etc.
+
