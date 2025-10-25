@@ -59,4 +59,14 @@ describe("E2E Tests", () => {
       await request(app).post("/users").send(userData).expect(409);
     });
   });
+
+  describe("GET /contacts", () => {
+    it("should get contacts endpoint", async () => {
+      const response = await request(app)
+        .get("/contacts")
+        .expect(200);
+      
+      expect(Array.isArray(response.body)).toBe(true);
+    });
+  });
 });
