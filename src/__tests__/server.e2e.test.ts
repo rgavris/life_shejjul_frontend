@@ -69,4 +69,27 @@ describe("E2E Tests", () => {
       expect(Array.isArray(response.body)).toBe(true);
     });
   });
+
+  describe("GET /getAllMyEvents", () => {
+    it("should return 400 for missing userId", async () => {
+      await request(app)
+        .get("/getAllMyEvents")
+        .expect(400);
+    });
+
+    it("should return 400 for invalid userId", async () => {
+      await request(app)
+        .get("/getAllMyEvents?userId=abc")
+        .expect(400);
+    });
+
+    it("should return empty array for user with no events", async () => {
+      const response = await request(app)
+        .get("/getAllMyEvents?userId=999")
+        .expect(200);
+      
+      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body).toHaveLength(0);
+    });
+  });
 });

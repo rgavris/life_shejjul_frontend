@@ -2,8 +2,7 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  ManyToOne,
-  JoinColumn,
+  OneToMany,
 } from "typeorm";
 import { Event } from "./Event";
 
@@ -27,10 +26,6 @@ export class User {
   @Column()
   password!: string;
 
-  @Column({ nullable: true })
-  eventId!: number | null;
-
-  @ManyToOne(() => Event, { nullable: true })
-  @JoinColumn({ name: "eventId" })
-  event!: Event | null;
+  @OneToMany(() => Event, (event) => event.user)
+  events!: Event[];
 }

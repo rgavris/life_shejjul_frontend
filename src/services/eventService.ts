@@ -20,16 +20,20 @@ export class EventService {
     });
   }
 
-  async findById(id: number): Promise<Event | null> {
+  async findByEventId(id: number): Promise<Event | null> {
     return await this.eventRepository.findOne({
       where: { id },
       relations: ["contact"],
     });
   }
 
+  async findByUserId(id: number): Promise<Event[] | null> {
+    return await this.eventRepository.find({ where: { userId: id } });
+  }
+
   async update(id: number, eventData: Partial<Event>): Promise<Event | null> {
     await this.eventRepository.update(id, eventData);
-    return await this.findById(id);
+    return await this.findByEventId(id);
   }
 
   async delete(id: number): Promise<boolean> {

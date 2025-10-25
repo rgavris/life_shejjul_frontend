@@ -4,6 +4,7 @@
 - [x] Chose an ORM (typeORM)
 - [x] Made our first table aka TypeOrm Entity
 - [x] Made Claude refactor into a TypeScript project so that TypeORM would work
+- [x] Add integration testing suite
 
 ### CRUD Functions
 - [x] ~~createUser, getUser, updateUser, deleteUser~~
@@ -14,13 +15,17 @@
   - [ ] Notify user if invalid
   - [ ] Handle on backend (in CRUD or API)
   - [ ] Can also handle on frontend
+ 
 
 ### API Routes
 - [x] GET /users
 - [x] POST /users (create user)
 - [x] GET /contacts
 - [x] POST /login
-- [ ] getAllMyEvents()
+- [ ] Auth
+  - [ ] Keep user logged in, track
+  - [ ] Make some API routes admin-only
+- [x] getAllMyEvents()
 - [ ] Add remaining API routes/endpoints for db CRUD
 - [ ] getAllContactsWithUpcomingBirthdays()
 - [ ] getAllContactsAttendingUpcomingEvents()
@@ -29,7 +34,7 @@
 - [ ] Send event invitations
 - [ ] saveEventInvitationText()
 - [ ] sendEventInvitationsToContactList(Contact[])
-- [ ] Reminders: email, text
+- [ ] scheduleEventReminder: email, text
 
 ### User Profile
 - [x] ~~DB entity: Update user to include username and password~~

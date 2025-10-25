@@ -7,6 +7,7 @@ import { Event } from "./entities/Event";
 import { Contact } from "./entities/Contact";
 import { UserService } from "./services/userService";
 import { ContactService } from "./services/contactService";
+import { EventService } from "./services/eventService";
 
 export function createApp() {
   const app = express();
@@ -14,6 +15,7 @@ export function createApp() {
 
   const userService = new UserService();
   const contactService = new ContactService();
+  const eventService = new EventService();
 
   app.post("/login", async (req, res) => {
     const { username, password } = req.body;
@@ -51,14 +53,12 @@ export function createApp() {
         password: hashedPassword,
       });
 
-      res
-        .status(201)
-        .json({
-          firstName: newUser.firstName,
-          lastName: newUser.lastName,
-          username: newUser.username,
-          id: newUser.id,
-        });
+      res.status(201).json({
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        username: newUser.username,
+        id: newUser.id,
+      });
     } catch (error: any) {
       if (error.code === "23505") {
         res.status(409).json({ error: "Username already exists" });
@@ -85,6 +85,26 @@ export function createApp() {
       res.status(500).json({ error: "Failed to fetch contacts" });
     }
   });
+
+  // TODO update when auth is added
+  app.get("/getAllMyEvents", async (req, res) => {
+    try {
+      const userId = parseInt(req.query.userId as string);
+      if (isNaN(userId)) {
+        return res.status(400).json({ error: "Invalid or missing userId" });
+      }
+
+      const events = await eventService.findByUserId(userId);
+
+      res.json(events);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch events" });
+    }
+  });
+  // figure out the DB logic
+  // update DB schema as necessary
+  // add more endpoints as necessary
+  // add tests/client usage
 
   return app;
 }

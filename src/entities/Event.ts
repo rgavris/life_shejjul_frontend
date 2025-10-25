@@ -6,6 +6,7 @@ import {
   JoinColumn,
 } from "typeorm";
 import { Contact } from "./Contact";
+import { User } from "./User";
 
 @Entity()
 export class Event {
@@ -20,6 +21,13 @@ export class Event {
 
   @Column()
   time!: Date;
+
+  @Column()
+  userId!: number;
+
+  @ManyToOne(() => User, (user) => user.events)
+  @JoinColumn({ name: "userId" })
+  user!: User;
 
   @Column({ nullable: true })
   contactId!: number | null;
