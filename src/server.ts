@@ -24,7 +24,8 @@ export function createApp(dataSource: DataSource) {
       if (!user) {
         res.status(401).json({ error: "Username not found" });
       } else if (await bcrypt.compare(password, user.password)) {
-        res.json({ message: "Login successful", user });
+        const { password, ...userWithoutPassword } = user;
+        res.json({ message: "Login successful", user: userWithoutPassword });
       } else {
         res.status(401).json({ error: "Invalid password" });
       }
