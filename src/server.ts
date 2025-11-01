@@ -46,9 +46,13 @@ export function createApp(dataSource: DataSource) {
         const token = jwt.sign(
           { userId: user.id, username: user.username },
           JWT_SECRET,
-          { expiresIn: "24h" }
+          { expiresIn: "24h" },
         );
-        res.json({ message: "Login successful", token, user: userWithoutPassword });
+        res.json({
+          message: "Login successful",
+          token,
+          user: userWithoutPassword,
+        });
       } else {
         res.status(401).json({ error: "Invalid password" });
       }
@@ -93,6 +97,11 @@ export function createApp(dataSource: DataSource) {
   });
 
   app.get("/users", async (req, res) => {
+    const auth = verifyAuth(req);
+    if (!auth.success) {
+      return res.status(401).json({ error: auth.error });
+    }
+
     try {
       const users = await userService.findAll();
       res.json(users);
@@ -115,15 +124,15 @@ export function createApp(dataSource: DataSource) {
     }
   });
 
-  // TODO update when auth is added
   app.get("/getAllMyEvents", async (req, res) => {
-    try {
-      const userId = parseInt(req.query.userId as string);
-      if (isNaN(userId)) {
-        return res.status(400).json({ error: "Invalid or missing userId" });
-      }
+    const { success, user, error } = verifyAuth(req);
 
-      const events = await eventService.findByUserId(userId);
+    if (!success) {
+      return res.status(401).json({ error: error });
+    }
+
+    try {
+      const events = await eventService.findByUserId(user.userId);
 
       res.json(events);
     } catch (error) {
