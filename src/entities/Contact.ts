@@ -17,4 +17,7 @@ export class Contact {
   // TODO: add validation when we write CRUD
   @Column()
   phoneNumber!: string;
+
+  @Column()
+  userId!: number;
 }
