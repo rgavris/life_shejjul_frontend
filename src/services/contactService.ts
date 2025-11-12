@@ -17,6 +17,12 @@ export class ContactService {
     return await this.contactRepository.find();
   }
 
+  async findByUserId(userId: number): Promise<Contact[]> {
+    return await this.contactRepository.find({
+      where: { userId },
+    });
+  }
+
   async findById(id: number): Promise<Contact | null> {
     return await this.contactRepository.findOne({
       where: { id },

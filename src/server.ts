@@ -10,6 +10,19 @@ import { UserService } from "./services/userService";
 import { ContactService } from "./services/contactService";
 import { EventService } from "./services/eventService";
 
+type AuthenticatedUser = {
+  userId: number;
+  username: string;
+  iat: number;
+  exp: number;
+};
+
+type AuthResult = {
+  success: boolean;
+  user?: AuthenticatedUser;
+  error?: string;
+};
+
 export function createApp(dataSource: DataSource) {
   const app = express();
   app.use(express.json());
@@ -20,7 +33,7 @@ export function createApp(dataSource: DataSource) {
 
   const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
-  const verifyAuth = (req: any) => {
+  const verifyAuth = (req: any): AuthResult => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return { success: false, error: "No token provided" };
@@ -112,22 +125,49 @@ export function createApp(dataSource: DataSource) {
 
   app.get("/contacts", async (req, res) => {
     const auth = verifyAuth(req);
-    if (!auth.success) {
+    if (!auth.success || !auth.user) {
       return res.status(401).json({ error: auth.error });
     }
 
     try {
-      const contacts = await contactService.findAll();
+      const contacts = await contactService.findByUserId(auth.user.userId);
       res.json(contacts);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch contacts" });
     }
   });
 
+  app.post("/contacts", async (req, res) => {
+    const auth = verifyAuth(req);
+    if (!auth.success) {
+      return res.status(401).json({ error: auth.error });
+    }
+
+    try {
+      const { firstName, lastName, email, phoneNumber, userId } = req.body;
+
+      if (!firstName || !lastName || !email || !phoneNumber || !userId) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const contact = await contactService.create({
+        firstName,
+        lastName,
+        email,
+        phoneNumber,
+        userId,
+      });
+
+      res.status(201).json(contact);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create contact" });
+    }
+  });
+
   app.get("/getAllMyEvents", async (req, res) => {
     const { success, user, error } = verifyAuth(req);
 
-    if (!success) {
+    if (!success || !user) {
       return res.status(401).json({ error: error });
     }
 

@@ -18,7 +18,7 @@ describe("E2E Tests", () => {
       // First create a user and login
       const userData = {
         firstName: "Test",
-        lastName: "User", 
+        lastName: "User",
         username: "testuser",
         password: "password123",
       };
@@ -112,6 +112,146 @@ describe("E2E Tests", () => {
         .expect(200);
 
       expect(Array.isArray(response.body)).toBe(true);
+    });
+
+    describe("User-specific contact filtering", () => {
+      it("should return only John Doe's contacts when John is logged in", async () => {
+        // Create John Doe user
+        const johnData = {
+          firstName: "John",
+          lastName: "Doe",
+          username: "johndoe",
+          password: "password123",
+        };
+        const johnResponse = await request(app)
+          .post("/users")
+          .send(johnData)
+          .expect(201);
+        const johnId = johnResponse.body.id;
+
+        const johnLoginResponse = await request(app)
+          .post("/login")
+          .send({ username: "johndoe", password: "password123" })
+          .expect(200);
+        const johnToken = johnLoginResponse.body.token;
+
+        // Create Jane Doe user
+        const janeData = {
+          firstName: "Jane",
+          lastName: "Doe",
+          username: "janedoe",
+          password: "password123",
+        };
+        const janeResponse = await request(app)
+          .post("/users")
+          .send(janeData)
+          .expect(201);
+
+        const janeId = janeResponse.body.id;
+
+        const janeLoginResponse = await request(app)
+          .post("/login")
+          .send({ username: "janedoe", password: "password123" })
+          .expect(200);
+        const janeToken = janeLoginResponse.body.token;
+
+        const createContactRequest = async (
+          contactData: any,
+          token: string,
+        ) => {
+          return request(app)
+            .post("/contacts")
+            .set("Authorization", `Bearer ${token}`)
+            .send(contactData)
+            .expect(201);
+        };
+
+        // Create John's contacts: Billy Bob, Granny Smith
+        await createContactRequest(
+          {
+            firstName: "Billy",
+            lastName: "Bob",
+            email: "billy.bob@example.com",
+            phoneNumber: "555-0001",
+            userId: johnId,
+          },
+          johnToken,
+        );
+
+        createContactRequest(
+          {
+            firstName: "Granny",
+            lastName: "Smith",
+            email: "granny.smith@example.com",
+            phoneNumber: "555-0002",
+            userId: johnId,
+          },
+          johnToken,
+        );
+
+        // Create Jane's contacts: Charlie Brown, Lucy Van Pelt
+        createContactRequest(
+          {
+            firstName: "Charlie",
+            lastName: "Brown",
+            email: "charlie.brown@example.com",
+            phoneNumber: "555-0003",
+            userId: janeId,
+          },
+          janeToken,
+        );
+
+        createContactRequest(
+          {
+            firstName: "Lucy",
+            lastName: "Van Pelt",
+            email: "lucy.vanpelt@example.com",
+            phoneNumber: "555-0004",
+            userId: janeId,
+          },
+          janeToken,
+        );
+
+        // Get John's contacts
+        const response = await request(app)
+          .get("/contacts")
+          .set("Authorization", `Bearer ${johnToken}`)
+          .expect(200);
+
+        expect(response.body).toHaveLength(2);
+        expect(
+          response.body.map((c: any) => `${c.firstName} ${c.lastName}`),
+        ).toEqual(expect.arrayContaining(["Billy Bob", "Granny Smith"]));
+        expect(
+          response.body.map((c: any) => `${c.firstName} ${c.lastName}`),
+        ).not.toEqual(
+          expect.arrayContaining(["Charlie Brown", "Lucy Van Pelt"]),
+        );
+      });
+
+      it("should return empty array when user has no contacts", async () => {
+        // Create user with no contacts
+        const userData = {
+          firstName: "Empty",
+          lastName: "User",
+          username: "emptyuser",
+          password: "password123",
+        };
+        await request(app).post("/users").send(userData).expect(201);
+
+        const loginResponse = await request(app)
+          .post("/login")
+          .send({ username: "emptyuser", password: "password123" })
+          .expect(200);
+
+        const response = await request(app)
+          .get("/contacts")
+          .set("Authorization", `Bearer ${loginResponse.body.token}`)
+          .expect(200);
+
+        expect(response.body).toHaveLength(0);
+        expect(Array.isArray(response.body)).toBe(true);
+      });
     });
   });
 
