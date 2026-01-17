@@ -4,6 +4,8 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  ManyToMany,
+  JoinTable,
 } from "typeorm";
 import { Contact } from "./Contact";
 import { User } from "./User";
@@ -29,10 +31,8 @@ export class Event {
   @JoinColumn({ name: "userId" })
   user!: User;
 
-  @Column({ nullable: true })
-  contactId!: number | null;
+  @ManyToMany(() => Contact)
+@JoinTable({ name: "event_contacts" })
+contacts!: Contact[];
 
-  @ManyToOne(() => Contact, { nullable: true })
-  @JoinColumn({ name: "contactId" })
-  contact!: Contact | null;
 }

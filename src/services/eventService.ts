@@ -67,11 +67,11 @@ export class EventService {
 
   async findByContact(contactId: number): Promise<Event[]> {
     return await this.eventRepository.find({
-      where: { contactId },
+      where: { contacts: { id: contactId } },
       relations: ["contact"],
     });
   }
-
+  
   async findUpcoming(): Promise<Event[]> {
     const now = new Date();
     return await this.eventRepository

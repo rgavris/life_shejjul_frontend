@@ -26,14 +26,7 @@ export class EventInvitationService {
       relations: ["event", "contact"],
     });
   }
-
-  async findById(id: number): Promise<EventInvitation | null> {
-    return await this.invitationRepository.findOne({
-      where: { id },
-      relations: ["event", "contact"],
-    });
-  }
-
+  
   async findByEventAndContact(
     eventId: number,
     contactId: number
