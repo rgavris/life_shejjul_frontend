@@ -15,7 +15,8 @@ jobs:
         image: postgres:15
         env:
           DB_PASSWORD: postgres
-          POSTGRES_USER: postgre
+          DB_USER: postgres
+          POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: postgres
         options: >-
