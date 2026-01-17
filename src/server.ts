@@ -7,10 +7,12 @@ import { User } from "./entities/User";
 import { Event } from "./entities/Event";
 import { Contact } from "./entities/Contact";
 import { EventInvitation, RSVPStatus } from "./entities/EventInvitation";
+import { EventReminder, ReminderType, ReminderRecipient } from "./entities/EventReminder";
 import { UserService } from "./services/userService";
 import { ContactService } from "./services/contactService";
 import { EventService } from "./services/eventService";
 import { EventInvitationService } from "./services/eventInvitationService";
+import { EventReminderService } from "./services/eventReminderService";
 
 type AuthenticatedUser = {
   userId: number;
@@ -33,6 +35,7 @@ export function createApp(dataSource: DataSource) {
   const contactService = new ContactService(dataSource);
   const eventService = new EventService(dataSource);
   const invitationService = new EventInvitationService(dataSource);
+  const reminderService = new EventReminderService(dataSource);
 
   const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -312,7 +315,7 @@ export function createApp(dataSource: DataSource) {
         address,
         time: new Date(time),
         userId: auth.user.userId,
-        contactId: null, // We'll use invitations instead
+        // Don't set contactId - we'll use invitations instead
       });
 
       // Create invitations if contactIds provided
@@ -652,7 +655,7 @@ export function createApp(dataSource: DataSource) {
 
       // Handle birthday updates
       // If both month and day are explicitly null, clear the birthday
-      if (birthMonth === null && birthDay === null) {
+      if (!birthMonth && !birthDay) {
         updateData.birthMonth = null;
         updateData.birthDay = null;
         updateData.birthYear = birthYear === null ? null : birthYear;
@@ -688,6 +691,241 @@ export function createApp(dataSource: DataSource) {
       res.status(500).json({ error: "Failed to update contact" });
     }
   });
+
+  // Create reminder for an event
+  app.post("/events/:eventId/reminders", async (req, res) => {
+    const auth = verifyAuth(req);
+    if (!auth.success || !auth.user) {
+      return res.status(401).json({ error: auth.error });
+    }
+
+    try {
+      const eventId = parseInt(req.params.eventId);
+      if (isNaN(eventId)) {
+        return res.status(400).json({ error: "Invalid event ID" });
+      }
+
+      // Verify event belongs to user
+      const event = await eventService.findByEventId(eventId);
+      if (!event) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+      if (event.userId !== auth.user.userId) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+
+      const {
+        reminderTime,
+        reminderType,
+        recipientType,
+        customMessage,
+        autoCreate,
+      } = req.body;
+
+      // Auto-create standard reminders (7 days, 1 day, 2 hours before)
+      if (autoCreate === true) {
+        const reminderTypes = reminderType
+          ? [reminderType]
+          : [ReminderType.EMAIL];
+        const recipient = recipientType || ReminderRecipient.ALL_INVITEES;
+
+        const reminders = await reminderService.createMultipleReminders(
+          eventId,
+          auth.user.userId,
+          event.time,
+          reminderTypes,
+          recipient
+        );
+
+        return res.status(201).json({
+          message: "Reminders created",
+          reminders,
+          count: reminders.length,
+        });
+      }
+
+      // Create single custom reminder
+      if (!reminderTime) {
+        return res.status(400).json({
+          error: "reminderTime is required (unless autoCreate is true)",
+        });
+      }
+
+      const reminder = await reminderService.create({
+        eventId,
+        userId: auth.user.userId,
+        reminderTime: new Date(reminderTime),
+        reminderType: reminderType || ReminderType.EMAIL,
+        recipientType: recipientType || ReminderRecipient.ALL_INVITEES,
+        customMessage: customMessage || null,
+      });
+
+      res.status(201).json({
+        message: "Reminder created",
+        reminder,
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        error: "Failed to create reminder",
+        details: error.message,
+      });
+    }
+  });
+
+  // Get reminders for an event
+  app.get("/events/:eventId/reminders", async (req, res) => {
+    const auth = verifyAuth(req);
+    if (!auth.success || !auth.user) {
+      return res.status(401).json({ error: auth.error });
+    }
+
+    try {
+      const eventId = parseInt(req.params.eventId);
+      if (isNaN(eventId)) {
+        return res.status(400).json({ error: "Invalid event ID" });
+      }
+
+      // Verify event belongs to user
+      const event = await eventService.findByEventId(eventId);
+      if (!event) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+      if (event.userId !== auth.user.userId) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+
+      const reminders = await reminderService.findByEventId(eventId);
+
+      res.json({
+        event: {
+          id: event.id,
+          name: event.name,
+          time: event.time,
+        },
+        reminders,
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        error: "Failed to fetch reminders",
+        details: error.message,
+      });
+    }
+  });
+
+  // Get all reminders for user
+  app.get("/reminders", async (req, res) => {
+    const auth = verifyAuth(req);
+    if (!auth.success || !auth.user) {
+      return res.status(401).json({ error: auth.error });
+    }
+
+    try {
+      const { upcoming } = req.query;
+
+      let reminders;
+      if (upcoming === "true") {
+        const days = parseInt(req.query.days as string) || 30;
+        reminders = await reminderService.findUpcomingReminders(
+          auth.user.userId,
+          days
+        );
+      } else {
+        reminders = await reminderService.findByUserId(auth.user.userId);
+      }
+
+      const stats = await reminderService.getReminderStats(auth.user.userId);
+
+      res.json({
+        reminders,
+        stats,
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        error: "Failed to fetch reminders",
+        details: error.message,
+      });
+    }
+  });
+
+  // Update reminder
+  app.put("/reminders/:id", async (req, res) => {
+    const auth = verifyAuth(req);
+    if (!auth.success || !auth.user) {
+      return res.status(401).json({ error: auth.error });
+    }
+
+    try {
+      const reminderId = parseInt(req.params.id);
+      if (isNaN(reminderId)) {
+        return res.status(400).json({ error: "Invalid reminder ID" });
+      }
+
+      const reminder = await reminderService.findById(reminderId);
+      if (!reminder) {
+        return res.status(404).json({ error: "Reminder not found" });
+      }
+      if (reminder.userId !== auth.user.userId) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+
+      const { reminderTime, customMessage, status } = req.body;
+
+      const updateData: any = {};
+      if (reminderTime) updateData.reminderTime = new Date(reminderTime);
+      if (customMessage !== undefined) updateData.customMessage = customMessage;
+      if (status) updateData.status = status;
+
+      const updatedReminder = await reminderService.update(
+        reminderId,
+        updateData
+      );
+
+      res.json({
+        message: "Reminder updated",
+        reminder: updatedReminder,
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        error: "Failed to update reminder",
+        details: error.message,
+      });
+    }
+  });
+
+  // Cancel/delete reminder
+  app.delete("/reminders/:id", async (req, res) => {
+    const auth = verifyAuth(req);
+    if (!auth.success || !auth.user) {
+      return res.status(401).json({ error: auth.error });
+    }
+
+    try {
+      const reminderId = parseInt(req.params.id);
+      if (isNaN(reminderId)) {
+        return res.status(400).json({ error: "Invalid reminder ID" });
+      }
+
+      const reminder = await reminderService.findById(reminderId);
+      if (!reminder) {
+        return res.status(404).json({ error: "Reminder not found" });
+      }
+      if (reminder.userId !== auth.user.userId) {
+        return res.status(403).json({ error: "Not authorized" });
+      }
+
+      await reminderService.cancel(reminderId);
+
+      res.json({
+        message: "Reminder cancelled",
+      });
+    } catch (error: any) {
+      res.status(500).json({
+        error: "Failed to cancel reminder",
+        details: error.message,
+      });
+    }
+  });
+
   // figure out the DB logic
   // update DB schema as necessary
   // add more endpoints as necessary
@@ -703,7 +941,7 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USER || "rachel",
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME || "life_schedule",
-  entities: [User, Event, Contact, EventInvitation],
+  entities: [User, Event, Contact, EventInvitation, EventReminder],
   synchronize: true, // for development: auto create database schema, no migrations
   logging: false,
 });

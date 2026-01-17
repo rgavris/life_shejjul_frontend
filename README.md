@@ -11,8 +11,8 @@
 - [x] ~~createEvent, getEvent, updateEvent, deleteEvent~~
 - [x] ~~createContact, getContact, updateContact, deleteContact~~
 - [ ] Validation
-  - [ ] Don't allow saving invalid contact info
-  - [ ] Notify user if invalid
+  - [x] Don't allow saving invalid contact info
+  - [x] Notify user if invalid
   - [ ] Handle on backend (in CRUD or API)
   - [ ] Can also handle on frontend
  
@@ -33,9 +33,9 @@
 - [x] Only create contacts for logged-in users
 
 ### Contact Features
-- [ ] Send event invitations
+- [x] Send event invitations
 - [ ] saveEventInvitationText()
-- [ ] sendEventInvitationsToContactList(Contact[])
+- [x] sendEventInvitationsToContactList(Contact[])
 - [ ] scheduleEventReminder: email, text
 
 ### User Profile

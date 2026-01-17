@@ -3,6 +3,7 @@ import { DataSource } from "typeorm";
 import { User } from "../entities/User";
 import { Event } from "../entities/Event";
 import { Contact } from "../entities/Contact";
+import { EventInvitation } from "../entities/EventInvitation";
 
 async function createTestDatabase() {
   const adminDataSource = new DataSource({
@@ -10,8 +11,8 @@ async function createTestDatabase() {
     host: "localhost",
     port: 5432,
     database: "postgres",
-    username: "postgres",
-    password: "postgres",
+    username: process.env.DB_USER || "rachel",
+    password: process.env.DB_PASSWORD,
   });
 
   try {
@@ -33,9 +34,9 @@ export const testDataSource = new DataSource({
   host: "localhost",
   port: 5432,
   database: "life_schedule_test",
-  username: "postgres",
-  password: "postgres",
-  entities: [User, Event, Contact],
+  username: process.env.DB_USER || "rachel",
+  password: process.env.DB_PASSWORD,
+  entities: [User, Event, Contact, EventInvitation],
   synchronize: true,
   logging: false,
 });
@@ -50,9 +51,12 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  const entities = testDataSource.entityMetadatas;
-  for (const entity of entities) {
-    const repository = testDataSource.getRepository(entity.name);
-    await repository.createQueryBuilder().delete().execute();
-  }
+  // Delete in order to respect foreign key constraints
+  // EventInvitation references Event and Contact
+  // Event references User and Contact
+  // Contact references User
+  await testDataSource.getRepository(EventInvitation).createQueryBuilder().delete().execute();
+  await testDataSource.getRepository(Event).createQueryBuilder().delete().execute();
+  await testDataSource.getRepository(Contact).createQueryBuilder().delete().execute();
+  await testDataSource.getRepository(User).createQueryBuilder().delete().execute();
 });
