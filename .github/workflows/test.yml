@@ -43,3 +43,5 @@ jobs:
       run: npm run test:e2e
       env:
         NODE_ENV: test
+        DB_PASSWORD: postgres
+        DB_USER: postgres
