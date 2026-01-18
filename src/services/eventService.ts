@@ -15,14 +15,14 @@ export class EventService {
 
   async findAll(): Promise<Event[]> {
     return await this.eventRepository.find({
-      relations: ["contact"],
+      relations: ["contacts"],
     });
   }
 
   async findByEventId(id: number): Promise<Event | null> {
     return await this.eventRepository.findOne({
       where: { id },
-      relations: ["contact"],
+      relations: ["contacts"],
     });
   }
 
@@ -43,21 +43,21 @@ export class EventService {
   async findByName(name: string): Promise<Event[]> {
     return await this.eventRepository.find({
       where: { name },
-      relations: ["contact"],
+      relations: ["contacts"],
     });
   }
 
   async findByAddress(address: string): Promise<Event[]> {
     return await this.eventRepository.find({
       where: { address },
-      relations: ["contact"],
+      relations: ["contacts"],
     });
   }
 
   async findByTimeRange(startTime: Date, endTime: Date): Promise<Event[]> {
     return await this.eventRepository
       .createQueryBuilder("event")
-      .leftJoinAndSelect("event.contact", "contact")
+      .leftJoinAndSelect("event.contacts", "contacts")
       .where("event.time >= :startTime AND event.time <= :endTime", {
         startTime,
         endTime,
@@ -68,7 +68,7 @@ export class EventService {
   async findByContact(contactId: number): Promise<Event[]> {
     return await this.eventRepository.find({
       where: { contacts: { id: contactId } },
-      relations: ["contact"],
+      relations: ["contacts"],
     });
   }
   
@@ -76,7 +76,7 @@ export class EventService {
     const now = new Date();
     return await this.eventRepository
       .createQueryBuilder("event")
-      .leftJoinAndSelect("event.contact", "contact")
+      .leftJoinAndSelect("event.contacts", "contacts")
       .where("event.time > :now", { now })
       .orderBy("event.time", "ASC")
       .getMany();
