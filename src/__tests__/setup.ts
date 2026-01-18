@@ -5,13 +5,16 @@ import { Event } from "../entities/Event";
 import { Contact } from "../entities/Contact";
 import { EventInvitation } from "../entities/EventInvitation";
 
+const workerId = process.env.JEST_WORKER_ID || "1";
+const schemaName = `test_worker_${workerId}`;
+
 async function createTestDatabase() {
   const adminDataSource = new DataSource({
     type: "postgres",
     host: "localhost",
     port: 5432,
     database: "postgres",
-    username: process.env.DB_USER || "rachel",
+    username: process.env.DB_USER || "postgres",
     password: process.env.DB_PASSWORD,
   });
 
@@ -34,19 +37,30 @@ export const testDataSource = new DataSource({
   host: "localhost",
   port: 5432,
   database: "life_schedule_test",
-  username: process.env.DB_USER || "rachel",
+  schema: schemaName,
+  username: process.env.DB_USER || "postgres",
   password: process.env.DB_PASSWORD,
   entities: [User, Event, Contact, EventInvitation],
-  synchronize: true,
+  synchronize: false,
   logging: false,
 });
 
 beforeAll(async () => {
   await createTestDatabase();
+
+  // Initialize without synchronize first
   await testDataSource.initialize();
+
+  // Create the schema for this worker
+  await testDataSource.query(`CREATE SCHEMA IF NOT EXISTS ${schemaName}`);
+
+  // Now manually synchronize to create tables in the schema
+  await testDataSource.synchronize();
 });
 
 afterAll(async () => {
+  // Clean up the schema for this worker
+  await testDataSource.query(`DROP SCHEMA IF EXISTS ${schemaName} CASCADE`);
   await testDataSource.destroy();
 });
 
